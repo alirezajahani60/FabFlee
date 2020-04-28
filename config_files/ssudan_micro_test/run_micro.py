@@ -1,8 +1,8 @@
 from flee import flee
-from flee import micro_flee
-from datamanager import handle_refugee_data, read_period
+from datamanager import handle_refugee_data,read_period
 from datamanager import DataTable #DataTable.subtract_dates()
 from flee import InputGeography
+from flee import micro_flee
 import numpy as np
 import outputanalysis.analysis as a
 import sys
@@ -31,7 +31,7 @@ if __name__ == "__main__":
     flee.SimulationSettings.ReadFromCSV(sys.argv[4])
   flee.SimulationSettings.FlareConflictInputFile = "%s/conflicts.csv" % input_csv_directory
 
-  e = micro_flee.Ecosystem()
+  e = flee.Ecosystem()
 
   ig = InputGeography.InputGeography()
 

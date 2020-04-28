@@ -1,6 +1,5 @@
 from flee import flee
-from flee import micro_flee
-from datamanager import handle_refugee_data, read_period
+from datamanager import handle_refugee_data,read_period
 from datamanager import DataTable #DataTable.subtract_dates()
 from flee import InputGeography
 import numpy as np
@@ -14,6 +13,8 @@ def AddInitialRefugees(e, d, loc):
     e.addAgent(location=loc)
 
 insert_day0_refugees_in_camps = True
+
+
 
 if __name__ == "__main__":
 
@@ -31,11 +32,9 @@ if __name__ == "__main__":
     flee.SimulationSettings.ReadFromCSV(sys.argv[4])
   flee.SimulationSettings.FlareConflictInputFile = "%s/conflicts.csv" % input_csv_directory
 
-  e = micro_flee.Ecosystem()
+  e = flee.Ecosystem()
 
   ig = InputGeography.InputGeography()
-
-  ig.ReadFlareConflictInputCSV(flee.SimulationSettings.FlareConflictInputFile)
 
   ig.ReadLocationsFromCSV("%s/locations.csv" % input_csv_directory)
 
@@ -45,18 +44,23 @@ if __name__ == "__main__":
 
   e,lm = ig.StoreInputGeographyInEcosystem(e)
 
-  d = handle_refugee_data.RefugeeTable(csvformat="generic", data_directory=validation_data_directory, start_date=start_date, data_layout="data_layout.csv")
+  #print("Network data loaded")
 
-  d.ReadL1Corrections("%s/registration_corrections.csv" % input_csv_directory)
+  d = handle_refugee_data.RefugeeTable(csvformat="generic", data_directory=validation_data_directory, start_date="2016-06-01", data_layout="data_layout.csv")
+
+  d.correctLevel1Registrations("Jewi","2016-07-15")
+  d.correctLevel1Registrations("Kule","2016-12-23")
+  d.correctLevel1Registrations("Pugnido","2016-06-24")
+  d.correctLevel1Registrations("Pugnido_II","2016-07-08")
+  d.correctLevel1Registrations("Tierkidi","2016-12-11")
 
   output_header_string = "Day,"
 
   camp_locations      = e.get_camp_names()
 
   for l in camp_locations:
-      if insert_day0_refugees_in_camps:  
-          AddInitialRefugees(e,d,lm[l])
-      output_header_string += "%s sim,%s data,%s error," % (lm[l].name, lm[l].name, lm[l].name)
+    #AddInitialRefugees(e,d,lm[l])
+    output_header_string += "%s sim,%s data,%s error," % (lm[l].name, lm[l].name, lm[l].name)
 
   output_header_string += "Total error,refugees in camps (UNHCR),total refugees (simulation),raw UNHCR refugee count,refugees in camps (simulation),refugee_debt"
 
@@ -75,12 +79,6 @@ if __name__ == "__main__":
     new_refs = d.get_daily_difference(t, FullInterpolation=True) - refugee_debt
     refugees_raw += d.get_daily_difference(t, FullInterpolation=True)
 
-    #Refugees are pre-placed in Mali, so set new_refs to 0 on Day 0.
-    if insert_day0_refugees_in_camps:  
-        if t == 0:
-            new_refs = 0
-            #refugees_raw = 0
-
     if new_refs < 0:
       refugee_debt = -new_refs
       new_refs = 0
@@ -92,8 +90,6 @@ if __name__ == "__main__":
       e.addAgent(e.pick_conflict_location())
 
     e.refresh_conflict_weights()
-    
-    #print(new_refs)
     t_data = t
 
     e.enact_border_closures(t)
@@ -128,8 +124,11 @@ if __name__ == "__main__":
       output += ",%s,%s,%s" % (lm[camp_locations[i]].numAgents, loc_data[i], errors[i])
 
     if refugees_raw>0:
-      output += ",%s,%s,%s,%s,%s,%s" % (float(np.sum(abs_errors))/float(refugees_raw), int(sum(loc_data)), e.numAgents(), refugees_raw, refugees_in_camps_sim, refugee_debt)
+      output_string += ",%s,%s,%s,%s" % (float(np.sum(abs_errors))/float(refugees_raw), int(sum(loc_data)), e.numAgents(), refugees_raw)
+      #output += ",%s,%s,%s,%s,%s,%s" % (float(np.sum(abs_errors))/float(refugees_raw), int(sum(loc_data)), e.numAgents(), refugees_raw, refugees_in_camps_sim, refugee_debt)
     else:
       output += ",0,0,0,0,0,0"
+      #output_string += ",0"
+
 
     print(output)
